@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ENUMS
+//
+enum UserRole {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum PropertyPurpose {
+  VENDA
+  ARRENDAMENTO
+}
+
+enum PropertyType {
+  APARTAMENTO
+  CASA
+  TERRENO
+  LOJA
+  ESCRITORIO
+  ARMAZEM
+  QUARTO
+  OUTRO
+}
+
+enum PropertyStatus {
+  PENDENTE
+  ATIVO
+  REJEITADO
+  ARQUIVADO
+}
+
+enum Currency {
+  AOA
+  EUR
+  USD
+}
+
+enum EventType {
+  VIEW
+  LEAD
+}
+
+enum LeadChannel {
+  WHATSAPP
+  CALL
+  FORM
+}
+
+enum PartnerStatus {
+  ATIVO
+  INATIVO
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum WorkType {
+  PRESENCIAL
+  HIBRIDO
+  REMOTO
+}
+
+//
+// MODELS
+//
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String   @unique
+  email        String?  @unique
+  passwordHash String
+  role         UserRole @default(USER)
+
+  properties   Property[]
+  jobApps      JobApplication[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Location {
+  id             String   @id @default(uuid())
+  country        String   @default("Angola")
+  province       String
+  municipality   String
+  district       String?  // comuna/bairro/zona (flexível)
+  referencePoint String?  // ponto de referência (texto livre)
+
+  properties     Property[]
+
+  createdAt      DateTime @default(now())
+
+  @@index([country, province, municipality])
+}
+
+model Property {
+  id          String          @id @default(uuid())
+  ownerId     String
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  title       String
+  slug        String          @unique
+  description String
+
+  purpose     PropertyPurpose
+  type        PropertyType
+
+  price       Decimal         @db.Numeric(18, 2)
+  currency    Currency        @default(AOA)
+
+  bedrooms    Int?            // nulo para terreno, etc.
+  bathrooms   Int?
+  areaM2      Decimal?        @db.Numeric(18, 2)
+
+  locationId  String
+  location    Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  addressText String?
+  lat         Decimal?        @db.Numeric(10, 7)
+  lng         Decimal?        @db.Numeric(10, 7)
+
+  status      PropertyStatus  @default(PENDENTE)
+  viewsCount  Int             @default(0)
+
+  images      PropertyImage[]
+  events      Event[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([purpose, type])
+  @@index([locationId, price])
+}
+
+model PropertyImage {
+  id        String   @id @default(uuid())
+  propertyId String
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  url       String
+  isCover   Boolean  @default(false)
+  sortOrder Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId, isCover])
+}
+
+model Event {
+  id         String      @id @default(uuid())
+  propertyId String
+  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  type       EventType
+  channel    LeadChannel?
+  ip         String?
+  userAgent  String?
+
+  createdAt  DateTime    @default(now())
+
+  @@index([propertyId, createdAt])
+  @@index([type, createdAt])
+}
+
+//
+// PARCEIROS (banners de logotipo + link)
+//
+model Partner {
+  id          String        @id @default(uuid())
+  name        String
+  logoUrl     String
+  websiteUrl  String?
+  status      PartnerStatus @default(ATIVO)
+  sortOrder   Int           @default(0)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+//
+// CARREIRAS (vagas na LI) + candidaturas
+//
+model Job {
+  id          String    @id @default(uuid())
+  title       String
+  department  String?   // Ex: Comercial, TI, Marketing
+  location    String?   // Ex: Luanda - Angola
+  workType    WorkType  @default(PRESENCIAL)
+  description String
+  status      JobStatus @default(OPEN)
+
+  applications JobApplication[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model JobApplication {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // se quiser ligar candidato a uma conta (opcional no MVP)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  fullName  String
+  email     String
+  phone     String
+  message   String?
+  cvUrl     String?  // link do PDF no storage (Cloudinary/S3)
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId, createdAt])
+}
+
+//
+// CONFIGURAÇÕES DO SITE (contactos, sede, etc.)
+//
+model SiteSetting {
+  id              String   @id @default(uuid())
+  siteName        String   @default("Luanda Imóveis")
+  shortName       String   @default("LI")
+  domain          String?  // luandaimoveis.com
+
+  officeAddress   String?  // "Luanda - Angola"
+  phone           String?
+  whatsapp        String?
+  emailCadastros  String?
+  emailInfo       String?
+
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+}
