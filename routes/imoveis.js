@@ -1,11 +1,15 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import { authMiddleware } from "../lib/protect.js";
 
 const router = express.Router();
 
-// Criar imóvel
-router.post("/", async (req, res) => {
-  const data = req.body;
+// 🔒 Criar imóvel (PROTEGIDO)
+router.post("/", authMiddleware, async (req, res) => {
+  const data = {
+    ...req.body,
+    usuarioId: req.user.id,
+  };
 
   try {
     const imovel = await prisma.imovel.create({ data });
@@ -15,11 +19,20 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Listar imóveis
+// 🌍 Listar imóveis (PÚBLICO)
 router.get("/", async (req, res) => {
   const imoveis = await prisma.imovel.findMany({
-    include: { usuario: true },
+    include: {
+      usuario: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+        },
+      },
+    },
   });
+
   res.json(imoveis);
 });
 
