@@ -1,16 +1,18 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
+import dotenv from "dotenv";
 
 import usuariosRoutes from "./routes/usuarios.js";
 import imoveisRoutes from "./routes/imoveis.js";
+
+dotenv.config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// rota de saúde (IMPORTANTE)
+// rota raiz (health check)
 app.get("/", (req, res) => {
   res.json({
     name: "Luanda Imóveis API",
@@ -19,11 +21,12 @@ app.get("/", (req, res) => {
   });
 });
 
+// REGISTRO DAS ROTAS (❗ ISSO FALTAVA)
 app.use("/usuarios", usuariosRoutes);
 app.use("/imoveis", imoveisRoutes);
 
-// 🚨 PORTA CORRETA PARA RAILWAY
-const PORT = process.env.PORT || 8080;
+// porta Railway
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`🚀 API rodando na porta ${PORT}`);

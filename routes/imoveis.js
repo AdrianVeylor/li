@@ -4,7 +4,7 @@ import { authMiddleware } from "../lib/protect.js";
 
 const router = express.Router();
 
-// 🔒 Criar imóvel (PROTEGIDO)
+// Criar imóvel (PROTEGIDO)
 router.post("/", authMiddleware, async (req, res) => {
   const data = {
     ...req.body,
@@ -19,20 +19,11 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// 🌍 Listar imóveis (PÚBLICO)
+// Listar imóveis (PÚBLICO)
 router.get("/", async (req, res) => {
   const imoveis = await prisma.imovel.findMany({
-    include: {
-      usuario: {
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-        },
-      },
-    },
+    include: { usuario: true },
   });
-
   res.json(imoveis);
 });
 
