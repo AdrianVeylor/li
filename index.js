@@ -1,11 +1,10 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 
-dotenv.config();
+import usuariosRoutes from "./routes/usuarios.js";
+import imoveisRoutes from "./routes/imoveis.js";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -14,10 +13,14 @@ app.get("/", (req, res) => {
   res.json({
     name: "Luanda Imóveis API",
     status: "online",
-    environment: process.env.NODE_ENV || "local"
+    environment: process.env.NODE_ENV,
   });
 });
 
+app.use("/usuarios", usuariosRoutes);
+app.use("/imoveis", imoveisRoutes);
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 API Luanda Imóveis rodando na porta ${PORT}`);
+  console.log(`🚀 API rodando na porta ${PORT}`);
 });
