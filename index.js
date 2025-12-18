@@ -1,18 +1,17 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import "dotenv/config";
 
-import usuariosRoutes from "./routes/usuarios.js";
 import imoveisRoutes from "./routes/imoveis.js";
-
-dotenv.config();
+import usuariosRoutes from "./routes/usuarios.js";
 
 const app = express();
 
+// Middlewares globais
 app.use(cors());
 app.use(express.json());
 
-// rota raiz (health check)
+// Rota raiz (health check)
 app.get("/", (req, res) => {
   res.json({
     name: "Luanda Imóveis API",
@@ -21,13 +20,12 @@ app.get("/", (req, res) => {
   });
 });
 
-// REGISTRO DAS ROTAS (❗ ISSO FALTAVA)
-app.use("/usuarios", usuariosRoutes);
+// 🔗 REGISTO DAS ROTAS
 app.use("/imoveis", imoveisRoutes);
+app.use("/usuarios", usuariosRoutes);
 
-// porta Railway
+// Porta Railway
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log(`🚀 API rodando na porta ${PORT}`);
+  console.log(`🚀 API Luanda Imóveis rodando na porta ${PORT}`);
 });
